@@ -1,0 +1,184 @@
+---
+layout: guide
+title: Term Vector API
+cat: guide
+sidebar: reference_api
+---
+
+
+    
+p. Returns information and statistics on terms in the fields of a particular document as stored in the index.
+
+<pre class="prettyprint">
+curl -XGET 'http://localhost:9200/twitter/tweet/1/_termvector?pretty=true'
+</pre>
+
+p. Tree types of values can be requested: term information, term statistics and field statistics.
+By default, all term information and field statistics are returned for all fields but no term statistics.
+
+p. Optionally, you can specify the fields for which the information is retrieved either with a parameter in the url
+
+<pre class="prettyprint">
+curl -XGET 'http://localhost:9200/twitter/tweet/1/_termvector?fields=text,...'
+</pre>
+
+p. or adding by adding the requested fields in the request body (see example below).
+    
+h1. Term information
+
+    
+* term frequency in the field (always returned)
+* term positions (@positions@ : true)
+* start and end offsets (@offsets@ : true)
+* term payloads (@payloads@ : true), as base64 encoded bytes
+    
+p. If the requested information wasn't stored in the index, it will be omitted without further warning.
+    See "mapping":/guide/reference/mapping/ section on how to configure your index to store term vectors.
+    
+h1. Term statistics
+
+    
+p. Setting @term_statistics@ to @true@ (default is @false@) will return
+    
+* total term frequency (how often a term occurs in all documents)
+* document frequency (the number of documents containing the current term)
+    
+p. By default these values are not returned since term statistics can have a serious performance impact.
+    
+h1. Field statistics
+
+    
+p. Setting @field_statistics@ to @false@ (default is @true@) will omit
+    
+* document count (how many documents contain this field)
+* sum of document frequencies (the sum of document frequencies for all terms in this field)
+* sum of total term frequencies (the sum of total term frequencies of each term in this field)
+    
+h1. Behavior
+
+    
+p. The term and field statistics are not accurate. Deleted documents are not taken into account. The information is only retrieved for the shard the requested document resides in. The term and field statistics are therefore only useful as relative measures whereas the absolute numbers have no meaning in this context.
+    
+h1. Example
+    
+    
+p. First, we create an index that stores term vectors, payloads etc. :
+
+<pre class="prettyprint">
+curl -s -XPUT 'http://localhost:9200/twitter/' -d '{
+    "mappings": {
+        "tweet": {
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "term_vector": "with_positions_offsets_payloads",
+                    "store" : "yes",
+                    "index_analyzer" : "fulltext_analyzer"
+                 },
+                 "fullname": {
+                    "type": "string",
+                    "term_vector": "with_positions_offsets_payloads",
+                    "index_analyzer" : "fulltext_analyzer"
+                 }
+             }
+        }
+    },
+    "settings" : {
+        "index" : {
+            "number_of_shards" : 1,
+            "number_of_replicas" : 0
+        },
+        "analysis": {
+            "analyzer": {
+                "fulltext_analyzer": {
+                    "type": "custom",
+                    "tokenizer": "whitespace",
+                    "filter": [
+                        "lowercase",
+                        "type_as_payload"
+                    ]
+                }
+            }
+       }
+    }
+}'
+</pre>
+    
+p. Second, we add some documents:
+
+<pre class="prettyprint">
+curl -XPUT 'http://localhost:9200/twitter/tweet/1?pretty=true' -d '{
+      "fullname" : "John Doe",
+      "text" : "twitter test test test "
+
+}'
+    
+curl -XPUT 'http://localhost:9200/twitter/tweet/2?pretty=true' -d '{
+      "fullname" : "Jane Doe",
+      "text" : "Another twitter test ..."
+
+}'
+</pre>
+
+p.    The following request returns all information and statistics for field "text" in document "1" (John Doe):
+
+<pre class="prettyprint">    
+curl -XGET 'http://localhost:9200/twitter/tweet/1/_termvector?pretty=true' -d '{
+        "fields" : ["text"],
+        "offsets" : true,
+        "payloads" : true,
+        "positions" : true,
+        "term_statistics" : true,
+        "field_statistics" : true
+}'
+</pre>
+
+p. Equivalently, all parameters can be passed as URI parameters:
+
+<pre class="prettyprint">
+curl -GET 'http://localhost:9200/twitter/tweet/1/_termvector?pretty=true&fields=text&offsets=true&payloads=true&positions=true&term_statistics=true&field_statistics=true'
+</pre>
+
+p. Response:
+
+<pre class="prettyprint">
+    
+{
+    "_index" : "twitter",
+    "_type" : "tweet",
+    "_id" : "1",
+    "_version" : 1,
+    "exists" : true,
+    "term_vectors" : {
+          "text" : {
+                "field_statistics" : {
+                      "sum_doc_freq" : 6,
+                      "doc_count" : 2,
+                      "sum_ttf" : 8
+                },
+                "terms" : {
+                      "test" : {
+                            "doc_freq" : 2,
+                            "ttf" : 4,
+                            "term_freq" : 3,
+                            "pos" : [ 1, 2, 3 ],
+                            "start" : [ 8, 13, 18 ],
+                            "end" : [ 12, 17, 22 ],
+                            "payload" : [ "d29yZA==", "d29yZA==", "d29yZA==" ]
+                      },
+                      "twitter" : {
+                            "doc_freq" : 2,
+                            "ttf" : 2,
+                            "term_freq" : 1,
+                            "pos" : [ 0 ],
+                            "start" : [ 0 ],
+                            "end" : [ 7 ],
+                            "payload" : [ "d29yZA==" ]
+                      }
+               }
+          }
+     }
+}
+</pre> 
+
+
