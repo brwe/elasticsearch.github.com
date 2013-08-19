@@ -144,40 +144,60 @@ p. Response:
 <pre class="prettyprint">
     
 {
-    "_index" : "twitter",
-    "_type" : "tweet",
-    "_id" : "1",
-    "_version" : 1,
-    "exists" : true,
-    "term_vectors" : {
-          "text" : {
-                "field_statistics" : {
-                      "sum_doc_freq" : 6,
-                      "doc_count" : 2,
-                      "sum_ttf" : 8
+    "_id": "1",
+    "_index": "twitter",
+    "_type": "tweet",
+    "_version": 1,
+    "exists": true,
+    "term_vectors": {
+        "text": {
+            "field_statistics": {
+                "doc_count": 2,
+                "sum_doc_freq": 6,
+                "sum_ttf": 8
+            },
+            "terms": {
+                "test": {
+                    "doc_freq": 2,
+                    "term_freq": 3,
+                    "tokens": [
+                        {
+                            "end_offset": 12,
+                            "payload": "d29yZA==",
+                            "position": 1,
+                            "start_offset": 8
+                        },
+                        {
+                            "end_offset": 17,
+                            "payload": "d29yZA==",
+                            "position": 2,
+                            "start_offset": 13
+                        },
+                        {
+                            "end_offset": 22,
+                            "payload": "d29yZA==",
+                            "position": 3,
+                            "start_offset": 18
+                        }
+                    ],
+                    "ttf": 4
                 },
-                "terms" : {
-                      "test" : {
-                            "doc_freq" : 2,
-                            "ttf" : 4,
-                            "term_freq" : 3,
-                            "pos" : [ 1, 2, 3 ],
-                            "start" : [ 8, 13, 18 ],
-                            "end" : [ 12, 17, 22 ],
-                            "payload" : [ "d29yZA==", "d29yZA==", "d29yZA==" ]
-                      },
-                      "twitter" : {
-                            "doc_freq" : 2,
-                            "ttf" : 2,
-                            "term_freq" : 1,
-                            "pos" : [ 0 ],
-                            "start" : [ 0 ],
-                            "end" : [ 7 ],
-                            "payload" : [ "d29yZA==" ]
-                      }
-               }
-          }
-     }
+                "twitter": {
+                    "doc_freq": 2,
+                    "term_freq": 1,
+                    "tokens": [
+                        {
+                            "end_offset": 7,
+                            "payload": "d29yZA==",
+                            "position": 0,
+                            "start_offset": 0
+                        }
+                    ],
+                    "ttf": 2
+                }
+            }
+        }
+    }
 }
 </pre> 
 
